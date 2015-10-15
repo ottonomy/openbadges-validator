@@ -20,6 +20,7 @@ test('getUrl: required, missing', function (t) {
 });
 
 test('getUrl: required, unreachable', function (t) {
+  nock.disableNetConnect();
   resources.getUrl({
     url: ORIGIN + '/test',
     required: true,
@@ -99,6 +100,36 @@ test('getUrl: json, unparseable', function (t) {
 test('getUrl: json, parseable', function (t) {
   httpScope
     .get('/test').reply(200, '{"stuff":"all of it"}', {'content-type': 'application/json'})
+  resources.getUrl({
+    url: ORIGIN + '/test',
+    required: false,
+    json: true,
+  }, function (ex, result) {
+    t.notOk(ex, 'no exceptions');
+    t.notOk(result.error, 'no errors')
+    t.same(result.body.stuff, 'all of it');
+    t.end();
+  });
+});
+
+test('getUrl: json, content-type not declared', function (t) {
+  nock(ORIGIN)
+    .defaultReplyHeaders({
+      'Content-Type': function(req, res, body){
+        if (req.headers['accept'] == 'application/json')
+          return 'application/json';
+        else
+          return 'text/html';
+      }
+    })
+    .get('/test')
+    .reply(function(uri, requestBody, cb){
+      if (this.req.headers['accept'] == 'application/json')
+        cb(null, [200, '{"stuff":"all of it"}']);
+      else
+        cb(null, [200, '<html>Hello world</html>']);
+    })
+
   resources.getUrl({
     url: ORIGIN + '/test',
     required: false,

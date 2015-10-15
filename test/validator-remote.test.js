@@ -9,6 +9,7 @@ const ORIGIN = 'https://example.org';
 const httpScope = nock(ORIGIN);
 
 test('validator.getLinkedStructures: unreachable badge', function (t) {
+  nock.disableNetConnect();
   const assertion = generators['1.0.0-assertion']();
   validator.getLinkedStructures(assertion, function (err, results) {
     t.same(err.field, 'badge')
